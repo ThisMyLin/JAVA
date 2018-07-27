@@ -1,5 +1,8 @@
 package alPay.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -10,7 +13,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +35,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -80,7 +91,7 @@ public class Util {
      * @return
      */
     public static String getTokenCode() {
-        return UUID.randomUUID().toString().replace("-", "");
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 32);
     }
 
     /**
@@ -608,5 +619,112 @@ public class Util {
         }
 
         return list;
+    }
+    
+    /**
+     * wxpay 生成签名
+     * @param packageParams 参数列表
+     * @param API_KEY 商户秘钥
+     * @return
+     */
+    public static String createSign(SortedMap<Object, Object> packageParams, String API_KEY) {
+        StringBuffer sb = new StringBuffer();
+        Set es = packageParams.entrySet();
+        Iterator it = es.iterator();
+        while (it.hasNext()) {
+            Map.Entry entry = (Map.Entry) it.next();
+            String k = (String) entry.getKey();
+            String v = (String) entry.getValue();
+            if (null != v && !"".equals(v) && !"sign".equals(k) && !"key".equals(k)) {
+                sb.append(k + "=" + v + "&");
+            }
+        }
+        sb.append("key=" + API_KEY);
+        String sign = getMd5(sb.toString()).toUpperCase();
+        return sign;
+    }
+    
+    /**
+     * 将参数转化为XML
+     * @param parameters 参数列表
+     * @return
+     */
+    public static String getRequestXml(SortedMap<Object, Object> parameters) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("<xml>");
+        Set es = parameters.entrySet();
+        Iterator it = es.iterator();
+        while (it.hasNext()) {
+            Map.Entry entry = (Map.Entry) it.next();
+            String k = (String) entry.getKey();
+            String v = (String) entry.getValue();
+            if ("attach".equalsIgnoreCase(k) || "body".equalsIgnoreCase(k) || "sign".equalsIgnoreCase(k)) {
+                sb.append("<" + k + ">" + "<![CDATA[" + v + "]]></" + k + ">");
+            } else {
+                sb.append("<" + k + ">" + v + "</" + k + ">");
+            }
+        }
+        sb.append("</xml>");
+        return sb.toString();
+    }
+    
+    /**
+     * 解析xml
+     * @param strxml
+     * @return
+     * @throws JDOMException
+     * @throws IOException
+     */
+    public static Map doXMLParse(String strxml) throws JDOMException, IOException {
+        strxml = strxml.replaceFirst("encoding=\".*\"", "encoding=\"UTF-8\"");
+        if(null == strxml || "".equals(strxml)) {
+            return null;
+        }
+        Map m = new HashMap();
+        InputStream in = new ByteArrayInputStream(strxml.getBytes("UTF-8"));
+        SAXBuilder builder = new SAXBuilder();
+        Document doc = builder.build(in);
+        Element root = doc.getRootElement();
+        List list = root.getChildren();
+        Iterator it = list.iterator();
+        while(it.hasNext()) {
+            Element e = (Element) it.next();
+            String k = e.getName();
+            String v = "";
+            List children = e.getChildren();
+            if(children.isEmpty()) {
+                v = e.getTextNormalize();
+            } else {
+                v = getChildrenText(children);
+            }
+            m.put(k, v);
+        }
+        //关闭流
+        in.close();
+        return m;
+    }
+    /**
+     * 获取子结点的xml
+     * @param children
+     * @return
+     */
+    public static String getChildrenText(List children) {
+        StringBuffer sb = new StringBuffer();
+        if(!children.isEmpty()) {
+            Iterator it = children.iterator();
+            while(it.hasNext()) {
+                Element e = (Element) it.next();
+                String name = e.getName();
+                String value = e.getTextNormalize();
+                List list = e.getChildren();
+                sb.append("<" + name + ">");
+                if(!list.isEmpty()) {
+                    sb.append(getChildrenText(list));
+                }
+                sb.append(value);
+                sb.append("</" + name + ">");
+            }
+        }
+        return sb.toString();
     }
 }

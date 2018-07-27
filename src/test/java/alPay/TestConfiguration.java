@@ -13,6 +13,11 @@ public class TestConfiguration {
 
 	@Test
 	public void testJu() {
-		System.out.println(Util.getCurrentTime());
+		try {
+			String response = Util.httpPost("http://localhost:8080/v1.0/alipay", "");
+			System.out.println(response);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }
