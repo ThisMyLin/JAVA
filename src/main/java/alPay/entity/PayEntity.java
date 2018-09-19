@@ -15,28 +15,28 @@ public class PayEntity {
 	/**
 	 * 支付宝分配给开发者的应用ID
 	 */
-	private String app_id;
+	private String app_id = "";
 	
 	/**
 	 * 接口名称
 	 */
-	private String method;
+	private String method = "alipay.trade.precreate";
 	
 	/**
 	 * 仅支持JSON
 	 * 可以不传
 	 */
-	private String format;
+	private String format = "json";
 	
 	/**
 	 * 请求使用的编码格式，如utf-8,gbk,gb2312等
 	 */
-	private String charset;
+	private String charset = "utf-8";
 	
 	/**
 	 * 商户生成签名字符串所使用的签名算法类型，目前支持RSA2和RSA，推荐使用RSA2
 	 */
-	private String sign_type;
+	private String sign_type = "RSA2";
 	
 	/**
 	 * 商户请求参数的签名串，详见签名
@@ -51,7 +51,7 @@ public class PayEntity {
 	/**
 	 * 调用的接口版本，固定为：1.0
 	 */
-	private String version;
+	private String version = "1.0";
 	
 	/**
 	 * 支付宝服务器主动通知商户服务器里指定的页面http/https路径。

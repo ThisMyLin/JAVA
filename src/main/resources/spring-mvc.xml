@@ -15,7 +15,7 @@
     	<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
     </context:component-scan>
     <mvc:annotation-driven/>
-    <mvc:resources location="/" mapping="/*"/>
+    <mvc:default-servlet-handler/>
     <mvc:interceptors>
     	<mvc:interceptor>
     		<mvc:mapping path="/**"/>
